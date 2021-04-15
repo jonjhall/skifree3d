@@ -1,0 +1,63 @@
+Skifree3D
+
+3D version of the classic Windows game Skifree. Uses Free OpenGL Utility Toolkit.
+
+Free GLUT project:
+http://freeglut.sourceforge.net/
+
+Binaries and includes obtained from Martin Payne's packaged freeglut Windows libraries:
+https://www.transmissionzero.co.uk/software/freeglut-devel/
+
+Compiles using MinGW 9.2.0, but should work using MSVC binaries with Visual Studio (not included)
+
+To compile w/MinGW (Windows PowerShell):
+----------------------------------------
+g++ -c -o skifree3d.o skifree3d.cpp -I./include
+g++ -o skifree3d.exe skifree3d.o -L./lib -lfreeglut -lopengl32 -lglu32 "-Wl,--subsystem,windows"
+-or-
+g++ --% -o skifree3d.exe skifree3d.o -L./lib -lfreeglut -lopengl32 -lglu32 -Wl,--subsystem,windows
+
+Controls:
+---------
+- Mouse movement: controls the direction that the skier travels. The skier will not move below a certain angle that the mouse is at with the skier. Placing the mouse behind the skier stops him.
+- Left mouse button: makes the skier jump.
+- 'f' button: toggles "fast mode", increasing the skier's speed by a factor of 2.
+- 'h' button: toggles "hard mode", generating roughly five times as many terrain elements.
+- 'F2' button: resets the game.
+- 'Esc' button: exits the game.
+
+Animating with GLUT functions:
+------------------------------
+- Polygons: rendered programatically using GLUt/GLU cylender, cone, sphere, etc functions.
+- Skier movement: skier polygon joints move depending on the angle that the mouse position makes with the skier's position on the screen. glPushMatrix() and glPopMatrix() functions are used to make changes in translation and rotation relative to the outer matrix that was pushed. Each joint requiring another nested push of a matrix.
+- Terrain objects: speed depends on "forward" component of mouse angle.
+- Collision: skier less than 6.0 units away in x and z direction, followed by glutTimerFunc() callbacks used depending on the skier state.
+
+Skier states:
+-------------
+- Skiing normally: this is the state for going down the hill unobstructed.
+- Crashing: this state is entered when the skier collides with a terrain element that should send him to the ground.  When crashing, the skier will fall down from a height, and stay down for 1 full second before being able to move again.
+- Jumping: this state is entered when the user presses the left mouse button, and when the skier collides with a mogul while skiing normally.
+- High jumping: this state is entered when the skier collides with a ramp while skiing normally, or when colliding with a rock or stump while jumping.
+- Getting eaten: this state is only entered when you can go no further and the abominable snowman catches you.
+
+Terrain collision:
+------------------
+- Moguls: collision results in a jump from the skier that is equivalent to pressing the left mouse button. It is impossible to collide with the mogul when you are in any state but skiing normally.
+- Rocks and stumps: collision while skiing normally results in a crash, collision while jumping results in a high jump. These elements are not collided with while high jumping.
+- Ramps: collision with the rainbow colored ramps while skiing normally results in a high jump. It is impossible to collide with this element in any other state.
+- Small trees: collision while in any state but high jumping results in a crash.
+- Large trees: collision while in any state results in a crash.
+- Abominable snowman: collision while in any state except for high jumping results in getting eaten. If you are high jumping he will just wait for you to land. The snowman will only appear after a certain distance has been traveled in the z direction (forward).
+
+Not implemented from original game:
+-----------------------------------
+- Terrain: dead tree that you can set on fire, different sized moguls and large mogul patches
+- Moving entities: walking dog that barks, chairlift chairs and poles, beginner skier, snowboarder, 2nd abominable snowman
+- Game modes: freestyle mode and 2 different timed slalom courses
+
+Bugs
+----
+- resizing window affects mouse control
+- collision detection isn't perfect
+- some instances of the ramp texture appear darker
