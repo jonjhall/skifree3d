@@ -8,7 +8,7 @@ http://freeglut.sourceforge.net/
 Binaries and includes obtained from Martin Payne's packaged freeglut Windows libraries:
 https://www.transmissionzero.co.uk/software/freeglut-devel/
 
-Compiles using MinGW 9.2.0, but should work using MSVC binaries with Visual Studio (not included)
+Compiles using MinGW 9.2.0, but should work using MSVC binaries with Visual Studio (not included).
 
 To compile w/MinGW (Windows PowerShell):
 ----------------------------------------
@@ -28,7 +28,7 @@ Controls:
 
 Animating with GLUT functions:
 ------------------------------
-- Polygons: rendered programatically using GLUt/GLU cylender, cone, sphere, etc functions.
+- Polygons: rendered with GLUT/GLU API calls to cylender, cone, sphere, etc functions.
 - Skier movement: skier polygon joints move depending on the angle that the mouse position makes with the skier's position on the screen. glPushMatrix() and glPopMatrix() functions are used to make changes in translation and rotation relative to the outer matrix that was pushed. Each joint requiring another nested push of a matrix.
 - Terrain objects: speed depends on "forward" component of mouse angle.
 - Collision: skier less than 6.0 units away in x and z direction, followed by glutTimerFunc() callbacks used depending on the skier state.
@@ -52,12 +52,12 @@ Terrain collision:
 
 Not implemented from original game:
 -----------------------------------
-- Terrain: dead tree that you can set on fire, different sized moguls and large mogul patches
-- Moving entities: walking dog that barks, chairlift chairs and poles, beginner skier, snowboarder, 2nd abominable snowman
-- Game modes: freestyle mode and 2 different timed slalom courses
+- Terrain: dead tree that you can set on fire, different sized moguls and large mogul patches.
+- Moving entities: walking dog that barks, chairlift chairs and poles, beginner skier, snowboarder, 2nd abominable snowman.
+- Game modes: freestyle mode and 2 different timed slalom courses.
 
 Bugs
 ----
-- resizing window affects mouse control
-- collision detection isn't perfect
-- some instances of the ramp texture appear darker
+- Resizing window affects mouse control.
+- Collision detection isn't perfect.
+- Some instances of the ramp texture appear darker.
