@@ -1,5 +1,3 @@
-//concatenation of _skifree3d1.c + _skifree3d2.h
-
 #include <iostream>
 #include <list>
 #include <GL/glut.h>
@@ -9,23 +7,27 @@
 
 using namespace std;
 
+//initial window size/camera viewing angle
 int width = 800;
 int height = 600;
 float vangle;// = atan((double)height/1600)*180/M_PI;
 
+//lighting parameters
 float lpos[] = {-50.0, 50.0, 0.0, 0.0};
 float scolor[] = {1.0,1.0,1.0,1.0};
 float mcolor[] = {0.5,0.5,0.5,1.0};
 float ambient[] = {0.2,0.2,0.2,1.0};
 float diffuse[] = {0.8,0.8,0.8,1.0};
 float nospec[] = {0.0,0.0,0.0,1.0};
-
 float mat_shininess[] = { 50.0 };
 
+//OpenGL objects
 GLuint back;
 GLuint ramp;
 GLuint slist;
 GLUquadricObj *qobj;
+
+//initial game state
 float angle = M_PI/2;
 float fangle = 0.0;
 float jumph = 0.0;
@@ -47,6 +49,7 @@ float snowj = 0.0;
 float bottomsup = 1.0;
 bool restart = true;
 
+//terrain elements
 class terrain{
 public:
 	terrain(float xval,int d):x(xval),y(-50),z(-1400),dl(d){}
@@ -60,37 +63,47 @@ public:
 	float x;
 	float y;
 	float z;
-	int dl;
+	int dl; //terrain type (0-6)
 };
 
+//terrain position update
 void terrain::print(float d){
 
+    //abominable snowman comes to eat skier
 	if(dl==6 && kill){
 		x *= 0.9;
 		z *= 0.9;
 	}
+	//other other terrain elements moving normally
 	else{
 		x += fast_mode*d*xvelocity/5;
 		z += fast_mode*d*zvelocity/5;
 	}
 	
+	//y component for terrain that is "below the horizon"
 	if(y < 0.0){
 		y = (z+1000.0)/8;
 		if(y > 0.0)y = 0.0;
 	}
 
+    //translate function call, with extra jump y movement for snowman only
 	glTranslatef(x,(dl==6?y+snowj:y),z);
 	glCallList(slist+dl);
+
 }
 
+//terrain collision detection
 int terrain::stat(){
 	if(fabs(x)<6.0 && fabs(z)<6.0)return dl+1;
 	else return 0;
 }
 
+//list of terrain elements, plus threshold instance for comparison
 list<terrain> s_trees;
 list<terrain>::iterator iter;
 terrain threshold(0.0,50.0,0);
+
+//declarations for skier states/animations
 void uncrash(int);
 void fall(int);
 void land(int);
@@ -103,6 +116,7 @@ void feast();
 void die(int);
 void movement(int,int);
 
+//skier arm
 void drawArm(float a){
 	gluCylinder(qobj,0.6,0.6,2.0,8,4);
 	
@@ -133,6 +147,7 @@ void drawArm(float a){
 	glPopMatrix();
 }
 
+//skier ski
 void drawSki(){
 	  glColor3f(0.8,0.4,0.4);
 	  glBegin(GL_TRIANGLE_STRIP);
@@ -184,9 +199,10 @@ void drawSki(){
 	  glEnd();
 }
 
+//whole skier
 void drawSkier(){
 
-	glPushMatrix();  //Draw skis and boots
+	glPushMatrix(); //Draw skis and boots
       
 	  glRotatef(angle*180/M_PI,0.0,1.0,0.0);
 	  
@@ -214,7 +230,7 @@ void drawSkier(){
 	  
 	glPopMatrix();
 
-    glPushMatrix();  //Draw skier
+    glPushMatrix(); //Draw skier
       
 	    glTranslatef(0.0,0.8,0.0);
 	    glRotatef(jumpa*(30.0*cos(angle)+60.0)+(1.0-jumpa)*90.0,-1.0,0.0,0.0);
@@ -224,7 +240,7 @@ void drawSkier(){
 	  
 	    glColor3f(0.0,0.0,0.8);
 	  
-	    glPushMatrix();  //right shin
+	    glPushMatrix(); //right shin
 	    glTranslatef(1.0-(1.0-jumpa)*0.5,0.0,6.0);
 		glRotatef(45.0*(1.0-jumpa),0.0,-1.0,0.0);
 		glTranslatef(0.0,0.0,-6.0);
@@ -232,7 +248,7 @@ void drawSkier(){
 	    gluCylinder(qobj,1.0,0.6,4.0,6,3);
 	    glPopMatrix();
 	  
-	    glPushMatrix();  //left shin
+	    glPushMatrix(); //left shin
 	    glTranslatef((1.0-jumpa)*0.5-1.0,0.0,6.0);
 		glRotatef(45.0*(1.0-jumpa),0.0,1.0,0.0);
 		glTranslatef(0.0,0.0,-6.0);
@@ -240,56 +256,56 @@ void drawSkier(){
 	    gluCylinder(qobj,1.0,0.6,4.0,6,3);
 	    glPopMatrix();
 	  
-	    glPushMatrix();  //Knee joint
+	    glPushMatrix(); //knee joint
 	        
 	        glTranslatef(0.0,0.0,4.0);
 	        glRotatef(jumpa*90.0*cos(angle),1.0,0.0,0.0);
 	        
-	        glPushMatrix();  //right knee
+	        glPushMatrix(); //right knee
 		    glTranslatef(0.5,0.0,2.0);
 			glRotatef(45.0*(1.0-jumpa),0.0,-1.0,0.0);
 			glTranslatef(0.0,0.0,-2.0);
 		    glutSolidSphere(0.6,8,8);
 		    glPopMatrix();
 		    
-	        glPushMatrix();  //left knee
+	        glPushMatrix(); //left knee
 		    glTranslatef(-0.5,0.0,2.0);
 			glRotatef(45.0*(1.0-jumpa),0.0,1.0,0.0);
 			glTranslatef(0.0,0.0,-2.0);
 		    glutSolidSphere(0.6,8,8);
 		    glPopMatrix();
 	        
-	        glPushMatrix();  //left thigh
+	        glPushMatrix(); //left thigh
 			glTranslatef(-0.5,0.0,2.0);
 			glRotatef(45.0*(1.0-jumpa),0.0,1.0,0.0);
 	        glTranslatef(0.0,0.0,-2.0);//////////////////////change
             gluCylinder(qobj,0.6,0.6,2.0,6,3);
 	        glPopMatrix();
 	        
-	        glPushMatrix();  //right thigh
+	        glPushMatrix(); //right thigh
 			glTranslatef(0.5,0.0,2.0);
 			glRotatef(45.0*(1.0-jumpa),0.0,-1.0,0.0);
 	        glTranslatef(0.0,0.0,-2.0);//////////////////////change
             gluCylinder(qobj,0.6,0.6,2.0,6,3);
 	        glPopMatrix();
 	        
-	        glPushMatrix();  //hips
+	        glPushMatrix(); //hips
 	        glTranslatef(0.0,0.0,2.4);
 	        glScalef(1.0,0.7,0.7);
             glutSolidSphere(1.3,10,10);
 	        glPopMatrix();
 	        
-	        glPushMatrix();  //Hip joint
+	        glPushMatrix(); //hip joint
 			    
 	            glTranslatef(0.0,0.0,2.4);
 	            glRotatef((jumpa+situp)*90.0*cos(angle),-1.0,0.0,0.0);//////////change
 				
-				glPushMatrix();  //mid torso
+				glPushMatrix(); //mid torso
 	            glScalef(1.0,0.7,1.0);
                 gluCylinder(qobj,1.3,1.3,3.5,8,4);
 				glPopMatrix();
 				
-	            glPushMatrix();  //upper torso
+	            glPushMatrix(); //upper torso
 	            glTranslatef(0.0,0.0,3.5);
 	            glScalef(1.0,0.7,0.7);
                 glutSolidSphere(1.3,10,10);
@@ -297,22 +313,22 @@ void drawSkier(){
 				
 				glColor3f(0.8,0.0,0.4);
 				
-				glPushMatrix();  //left shoulder
+				glPushMatrix(); //left shoulder
 				glTranslatef(-1.0,0.0,3.5);
 				glutSolidSphere(0.6,8,8);
 				glPopMatrix();
 				
-				glPushMatrix();  //right shoulder
+				glPushMatrix(); //right shoulder
 				glTranslatef(1.0,0.0,3.5);
 				glutSolidSphere(0.6,8,8);
 				glPopMatrix();
 				
-				glPushMatrix();  //Shoulder joint
+				glPushMatrix(); //shoulder joint
 				    
 				    glTranslatef(0.0,0.0,3.5);
 					glRotatef(60.0*cos(angle),-1.0,0.0,0.0);
 					
-					glPushMatrix();  //left arm
+					glPushMatrix(); //left arm
 					glTranslatef(-1.0,0.0,0.0);
 				    glRotatef(150.0-(1.0-jumpa)*50.0,0.0,-1.0,0.0);
                     drawArm(1.0);
@@ -320,7 +336,7 @@ void drawSkier(){
 					
 					glColor3f(0.8,0.0,0.4);
 					
-					glPushMatrix();  //right arm
+					glPushMatrix(); //right arm
 					glTranslatef(1.0,0.0,0.0);
 				    glRotatef(150.0-(1.0-jumpa)*50.0,0.0,1.0,0.0);
 				    drawArm(-1.0);
@@ -330,13 +346,13 @@ void drawSkier(){
 				
 				glColor3f(1.0,0.75,0.5);
 				
-				glPushMatrix();  //head
+				glPushMatrix(); //head
 				glTranslatef(0.0,0.0,5.5);
 				glPushMatrix();
 					glScalef(1.0,1.0,1.2);
 					glutSolidSphere(1.2,8,8);
 				glPopMatrix();
-				glPushMatrix();//nose
+				glPushMatrix(); //nose
 					glTranslatef(0.0,1.1,-0.3);
 					glBegin(GL_TRIANGLE_FAN);
 					glNormal3f(0.0,1.0,0.0);
@@ -350,7 +366,7 @@ void drawSkier(){
 					glEnd();
 				glPopMatrix();
 				glColor3f(0.0,0.0,0.0);
-				glPushMatrix();//sunglasses left ear
+				glPushMatrix(); //sunglasses left ear
 					glTranslatef(-0.92,1.15,0.3);
 					glRotatef(12.0,0.0,0.0,-1.0);
 					glBegin(GL_POLYGON);
@@ -364,7 +380,7 @@ void drawSkier(){
 					glVertex3f(0.0,-1.2,-0.1);
 					glEnd();
 				glPopMatrix();
-				glPushMatrix();//sunglasses right ear
+				glPushMatrix(); //sunglasses right ear
 					glTranslatef(0.92,1.15,0.3);
 					glRotatef(12.0,0.0,0.0,1.0);
 					glBegin(GL_POLYGON);
@@ -379,12 +395,12 @@ void drawSkier(){
 					glEnd();
 				glPopMatrix();
 				glScalef(1.0,1.0,0.8);
-				glPushMatrix();//left sunglass
+				glPushMatrix(); //left sunglass
 					glTranslatef(-0.5,1.15,0.3);
 					glRotatef(90.0,1.0,0.0,0.0);
 					gluDisk(qobj,0.0,0.5,8,1);
 				glPopMatrix();
-				glPushMatrix();//right sunglass
+				glPushMatrix(); //right sunglass
 					glTranslatef(0.5,1.15,0.3);
 					glRotatef(90.0,1.0,0.0,0.0);
 					gluDisk(qobj,0.0,0.5,8,1);
@@ -393,7 +409,7 @@ void drawSkier(){
 				
 				glColor3f(0.9,0.0,0.0);
 				
-				glPushMatrix();  //cap
+				glPushMatrix(); //cap
 					glTranslatef(0.0,-0.16,6.0);
 					glRotatef(30.0,1.0,0.0,0.0);
 					gluCylinder(qobj,1.2,0.5,1.5,8,3);
@@ -417,15 +433,7 @@ void drawSkier(){
 	glPopMatrix();
 }
 
-void smallTree(){
-    glColor3f(0.8,0.4,0.4);
-	glRotatef(60.0,-1.0,0.0,0.0);
-	gluCylinder(qobj,3.0,2.0,10.0,6,2);
-	glColor3f(0.0,0.9,0.0);
-	glTranslatef(0.0,0.0,7.0);
-	glutSolidCone(8.0,18.0,8,3);
-}
-
+//terrain type 1
 void largeTree(){
 	glColor3f(0.8,0.4,0.4);
 	glRotatef(60.0,-1.0,0.0,0.0);
@@ -435,9 +443,19 @@ void largeTree(){
 	gluCylinder(qobj,9.0,6.0,18.0,8,3);
 	glTranslatef(0.0,0.0,18.0);
 	glutSolidCone(6.0,18.0,8,3);
-	
 }
 
+//type 2
+void smallTree(){
+    glColor3f(0.8,0.4,0.4);
+	glRotatef(60.0,-1.0,0.0,0.0);
+	gluCylinder(qobj,3.0,2.0,10.0,6,2);
+	glColor3f(0.0,0.9,0.0);
+	glTranslatef(0.0,0.0,7.0);
+	glutSolidCone(8.0,18.0,8,3);
+}
+
+//type 3
 void mogul(){
 	glColor3f(1.0,1.0,1.0);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, mcolor);
@@ -447,6 +465,7 @@ void mogul(){
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 }
 
+//type 4
 void rock(){
 	glColor3f(0.7,0.7,0.7);
 	//glMaterialfv(GL_FRONT, GL_SPECULAR, nospec);
@@ -454,6 +473,7 @@ void rock(){
 	//glMaterialfv(GL_FRONT, GL_SPECULAR, scolor);
 }
 
+//type 5
 void stump(){
     glColor3f(0.8,0.4,0.4);
 	glRotatef(60.0,-1.0,0.0,0.0);
@@ -462,6 +482,7 @@ void stump(){
 	gluDisk(qobj,0.0,4.0,6,1);
 }
 
+//type 6 (rainbow ramps)
 void dramp(){
 	glColor3f(1.0,1.0,1.0);
 	glRotatef(30.0,-1.0,0.0,0.0);
@@ -476,7 +497,9 @@ void dramp(){
 	glDisable(GL_TEXTURE_2D);
 }
 
+//terrain type 7 (abominable snowman)
 void monster(){
+
 	glLightfv(GL_LIGHT0, GL_AMBIENT, mcolor);
 	glColor3f(0.5,0.5,0.5);
 	glRotatef(30.0,1.0,0.0,0.0);
@@ -604,17 +627,20 @@ void monster(){
 	  glPopMatrix();
 	glPopMatrix();
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+
 }
 
+//game loop callback rendering each frame
 void display( void )
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  /*clear the window */
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /*clear the window */
 
-	//glLightfv(GL_LIGHT0, GL_POSITION, lpos);
+	//glLightfv(GL_LIGHT0, GL_POSITION, lpos); //put this in main()
 
     glMaterialfv(GL_FRONT, GL_SPECULAR, scolor);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
+    //snow layer polygon
     glPushMatrix();
 	 glColor3f(1.0,1.0,1.0);
      glBegin( GL_QUADS );
@@ -629,6 +655,7 @@ void display( void )
      glEnd();
     glPopMatrix();
 	
+	//background texture
 	glPushMatrix();
 	 glEnable(GL_TEXTURE_2D);
 	 glBindTexture( GL_TEXTURE_2D, back );
@@ -641,44 +668,56 @@ void display( void )
 	 glDisable(GL_TEXTURE_2D);
     glPopMatrix();
 	
+	//draw skier normally at (x,y,z) = (0.0,0.1,0.0) if not getting eaten
 	if(alive){
 		glPushMatrix();
-		 glTranslatef(0.0,0.1+jumph,0.0);
+		 glTranslatef(0.0,0.1+jumph,0.0); //add jump position
 		 drawSkier();
 		glPopMatrix();
 	}
 
+    //get delta time since last call to display()
 	tim = glutGet(GLUT_ELAPSED_TIME);
 	delta = tim - base;
 
 	int hit;
 	for(iter=s_trees.begin();iter!=s_trees.end();iter++){
+
+		//update each terrain element
 		glPushMatrix();
 		iter->print(delta);
 		glPopMatrix();
+
+		//terrain element returns its type if colliding (otherwise 0)
 		hit = iter->stat();
+
+		//collide only while moving (unless terrain type 7--snowman)
 		if(hit>0 && fabs(xvelocity)>0.01 && zvelocity>0.01 || hit==7){
+
+			//change skier state
 			switch(status){
-				case 0:			//skiing normally
+				case 0: //skiing normally
 					if(hit==3)jump();
 					else if(hit==6)hijump();
 					else if(hit==7)feast();
 					else crash();
 					break;
-				case 1:         //crashing
+				case 1: //crashing
 					if(hit==7)feast();
 					break;
-				case 2:         //jumping
+				case 2: //jumping
 					if(hit<3)crash();
 					else if(hit==4 || hit ==5)hijump();
 					else if(hit==7)feast();
 					break;
-				case 3:
+				case 3: //hi-jump (only collide with large tree)
 					if(hit<2)crash();
 				default: break;
 			}
+
 		}
 	}
+	//remove terrain that moves beyond threshold (set to 50 units behind skier)
 	s_trees.remove(threshold);
 	
 	dist_tot += fast_mode*delta*zvelocity/5;
@@ -690,6 +729,10 @@ void display( void )
 	
     glutSwapBuffers();
 }
+
+/*-------------------------------------------------*/
+/*    skier state changes & animation functions    */
+/*-------------------------------------------------*/
 
 void feast(){
 	xvelocity = 0.0;
@@ -712,7 +755,7 @@ void die(int v){
 
 void crash(){
 	cstat = status;
-	if(cstat == 0)cstat=1;//if crashing from normal skiing cstat=1, else cstat=2 (from jump)
+	if(cstat == 0)cstat=1; //if crashing from normal skiing cstat=1, else cstat=2 (from jump)
 	fangle = 1.0;
 	status = 1;
 	jumpa = 0.0;
@@ -721,7 +764,7 @@ void crash(){
 
 void hijump(){
 	cstat = 10;
-	if(status == 0)cstat=0;//if hijumping from... see above
+	if(status == 0)cstat=0; //if hijumping from... see above
 	zvelocity*=1.5;
 	xvelocity*=1.5;
 	status = 3;
@@ -797,10 +840,15 @@ void sjump(int v){
 	}
 }
 
+/*    end skier state changes & animation functions    */
+
+//adding initial terrain elements
 void init_populate(){
+
 	srand((unsigned)time(NULL));
 	rand();
 
+    //iterate through x values (left-right) and add random terrain element in random y position (forward-back)
 	float num;
 	for(int c=-1600;c<1600;c+=20){
 		num = (float)rand();
@@ -809,12 +857,17 @@ void init_populate(){
 
 }
 
+//adding more random terrain at regular intervals
 void rand_populate(int v){
 
+    //add new random terrain element (more likely for faster skier)
 	float num;
 	num = (float)rand();
-	if(num/RAND_MAX < zvelocity)
+	if(num/RAND_MAX < zvelocity){
 		s_trees.push_back(*(new terrain(2800.0*num/RAND_MAX-1400.0,(int)num%6)));
+	}
+
+    //add abominable snowman terrain element after certain distance
 	if(dist_tot>18600.0 && nosnowman){
 		s_trees.push_back(*(new terrain(0.0,6)));
 		restart = false;
@@ -822,8 +875,14 @@ void rand_populate(int v){
 		nosnowman = false;
 	}
 
+    //call this function again
 	glutTimerFunc(50/((int)(fast_mode*hard_mode)),rand_populate,0);
+
 }
+
+/*----------------------------*/
+/*    user input callbacks    */
+/*----------------------------*/
 
 void changeSize(int w,int h){
       width = w;
@@ -839,7 +898,7 @@ void changeSize(int w,int h){
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
 	  //        position           face point     up vector
-      gluLookAt(0.0,30.0,75.0,  0.0,20.0,0.0,  0.0,1.0,0.0);
+      gluLookAt(0.0,30.0,75.0,  0.0,20.0,0.0,  0.0,1.0,0.0); //camera facing negative z direction
 }
 
 void mouse(int button, int state, int x, int y){
@@ -905,7 +964,7 @@ void special(int key,int x,int y){
 	}
 }
 
-void keys(unsigned char key, int x, int y) {
+void keys(unsigned char key, int x, int y){
 	switch(key){
 		case 27:exit(0);break;
 		case 'f':
@@ -920,8 +979,10 @@ void keys(unsigned char key, int x, int y) {
     }
 }
 
-GLuint LoadTextureRAW( const char * filename, int wrap, int width, int height)
-{
+/*    end user input callbacks    */
+
+//load texture files (.raw)--code copied from somewhere
+GLuint LoadTextureRAW( const char * filename, int wrap, int width, int height){
   GLuint texture;
   void * data;
   FILE * file;
@@ -973,8 +1034,9 @@ GLuint LoadTextureRAW( const char * filename, int wrap, int width, int height)
 
 }
 
-int main(int argc, char** argv)
-{
+//start the game!
+int main(int argc, char** argv){
+
     glutInit(&argc,argv);
     //use double buffering and depth testing
     glutInitDisplayMode (GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -984,14 +1046,11 @@ int main(int argc, char** argv)
 
     //enable
     glEnable(GL_DEPTH_TEST);
-
     glEnable(GL_NORMALIZE);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 	
-    
-
 	glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
 	//glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
@@ -1029,25 +1088,25 @@ int main(int argc, char** argv)
     gluQuadricNormals(qobj, GLU_SMOOTH);
 
 	slist = glGenLists(7);
-    glNewList(slist, GL_COMPILE);//type 1
+    glNewList(slist, GL_COMPILE); //type 1
      largeTree();
     glEndList();
-	glNewList(slist+1, GL_COMPILE);//type 2
+	glNewList(slist+1, GL_COMPILE); //type 2
 	 smallTree();
 	glEndList();
-	glNewList(slist+2, GL_COMPILE);//type 3
+	glNewList(slist+2, GL_COMPILE); //type 3
 	 mogul();
 	glEndList();
-	glNewList(slist+3, GL_COMPILE);//type 4
+	glNewList(slist+3, GL_COMPILE); //type 4
 	 rock();
 	glEndList();
-	glNewList(slist+4, GL_COMPILE);//type 5
+	glNewList(slist+4, GL_COMPILE); //type 5
 	 stump();
 	glEndList();
-	glNewList(slist+5, GL_COMPILE);//type 6
+	glNewList(slist+5, GL_COMPILE); //type 6
 	 dramp();
 	glEndList();
-	glNewList(slist+6, GL_COMPILE);//type 7
+	glNewList(slist+6, GL_COMPILE); //type 7
 	 monster();
 	glEndList();
 
@@ -1056,4 +1115,5 @@ int main(int argc, char** argv)
 
     glutMainLoop(); /* enter event loop */
     return 0;
+
 }
